@@ -11,9 +11,9 @@ main(int argc, char *argv[]){
 	  exit(1);
 	}
 	int start = uptime(); //this is to record the start time
-
+	//creates a child process to run the command 
 	int pid = fork();
-	if (pid <0){
+	if (pid <0){ //if the fork fails
 	  printf("fork has failed\n");
 	  exit(1);
 	}
@@ -24,7 +24,7 @@ main(int argc, char *argv[]){
 	  exit(1);
 	}
 	else{
-	  //this process wait for child to finish then 
+	  //this parent process wait for child to finish then 
 	  //calls uptime again to obtain the end time
 	  //the parent will wait on the child
 	 // wait(0);
