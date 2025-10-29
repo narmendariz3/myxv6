@@ -98,17 +98,24 @@ sys_uptime(void)
 uint64
 sys_wait2(void)
 {
-   uint64 addr;
-   uint64 raddr;
-   struct rusage ru;
+   uint64 addr; //user space pointer where exit status is 
+   uint64 raddr; //resource stats pointer 
+   struct rusage ru; //kernel space  to hold usage data
    //get 1st arg-> pointer to int for stat
+
+   // Get the first argument (index 0) passed from user space.
+    // This should be the address of an integer where child’s exit status is gonna be written.
    if (argaddr(0, &addr) <0)
 	return -1;
    //get 2nd arg -> pointer to rusage struct
    if(argaddr(1, &raddr) <0)
 	return -1;
-   int pid = wait2(addr, &ru);
 
+   // Call the internal kernel function wait2().
+    // It behaves like wait(), but also fills 'ru' with resource usage stats.
+    // 'addr' is the user-provided address for the child’s exit status.
+   int pid = wait2(addr, &ru);
+//if vaild pointer 
    if  (raddr !=0){
      if(copyout(myproc()->pagetable, raddr, (char*)&ru, sizeof(ru))<0)
 	return -1;
