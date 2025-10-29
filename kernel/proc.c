@@ -120,7 +120,7 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
-
+  p->priority = 0; //USED FOR HW#
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
     freeproc(p);
@@ -665,25 +665,65 @@ procinfo(uint64 addr)
 {
   struct proc *p;
   struct proc *thisproc = myproc();
-  struct pstat procinfo;
-  int nprocs = 0;
-  for(p = proc; p < &proc[NPROC]; p++){ 
-    if(p->state == UNUSED)
-      continue;
-    nprocs++;
-    procinfo.pid = p->pid;
-    procinfo.state = p->state;
-    procinfo.size = p->sz;
-    if (p->parent)
-      procinfo.ppid = (p->parent)->pid;
-    else
-      procinfo.ppid = 0;
-    for (int i=0; i<16; i++)
-      procinfo.name[i] = p->name[i];
-   if (copyout(thisproc->pagetable, addr, (char *)&procinfo, sizeof(procinfo)) < 0)
-      return -1;
-    addr += sizeof(procinfo);
-  }
-  return nprocs;
-}
+  struct pstat kinfo;
+  int i = 0;
 
+  acquire(&wait_lock);
+
+  for (p = proc; p < &proc[NPROC]; p++) {
+    if (p->state == UNUSED) {
+      kinfo.inuse[i] = 0;
+    } else {
+      kinfo.inuse[i] = 1;
+      kinfo.pid[i] = p->pid;
+      kinfo.state[i] = p->state;
+      kinfo.size[i] = p->sz;
+      kinfo.ppid[i] = p->parent ? p->parent->pid : 0;
+      kinfo.priority[i] = p->priority;
+      safestrcpy(kinfo.name[i], p->name, sizeof(p->name));
+    }
+    i++;
+  }
+
+  release(&wait_lock);
+
+  if (copyout(thisproc->pagetable, addr, (char *)&kinfo, sizeof(kinfo)) < 0)
+    return -1;
+
+  return 0;
+}
+//HOMEWORK 3 SET PRIORITY
+
+int
+getPriority(int pid)
+{
+struct proc *p;
+
+    for(p = proc; p < &proc[NPROC]; p++){
+        acquire(&p->lock);
+        if(p->pid == pid){
+            int prio = p->priority;
+            release(&p->lock);
+            return prio;  // return the priority of the process
+        }
+        release(&p->lock);
+    }
+    return -1;  // process not found
+}
+int
+setPriority(int pid, int priority)
+{
+    struct proc *p;
+
+    for(p = proc; p < &proc[NPROC]; p++){
+        acquire(&p->lock);
+        if(p->pid == pid){
+            p->priority = priority;  // set the new priority
+            release(&p->lock);
+            return 0; // success
+        }
+        release(&p->lock);
+    }
+
+    return -1; // process not found
+}

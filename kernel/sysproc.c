@@ -7,6 +7,10 @@
 #include "spinlock.h"
 #include "proc.h"
 
+//hw 3
+int setPriority(int pid, int priority);
+int getPriority(int pid);
+
 uint64
 sys_exit(void)
 {
@@ -108,3 +112,21 @@ sys_getprocs(void)
   return(procinfo(addr));
 }
 
+uint64
+sys_setPriority(void)
+{
+int pid, priority;
+    if(argint(0, &pid) < 0 || argint(1, &priority) < 0)
+        return -1;
+    return setPriority(pid, priority);
+}
+
+
+uint64
+sys_getPriority(void)
+{
+int pid;
+    if(argint(0, &pid) < 0)
+        return -1;
+    return getPriority(pid);
+}

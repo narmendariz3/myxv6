@@ -1,4 +1,9 @@
+#ifndef PROC_H
+#define PROC_H //used for hw three to user the enum array
+
 // Saved registers for kernel context switches.
+
+#include "param.h" // added for hw 3 to use enum
 struct context {
   uint64 ra;
   uint64 sp;
@@ -80,7 +85,7 @@ struct trapframe {
   /* 280 */ uint64 t6;
 };
 
-enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+//where enum was - deleted so isnt double declared
 
 // Per-process state
 struct proc {
@@ -105,4 +110,6 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  int priority ;
 };
+#endif//for hw 3->my include guard

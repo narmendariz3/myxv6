@@ -1,3 +1,8 @@
+#ifndef PARAM_H
+#define PARAM_H
+//above is used for hw three to stop double declaring enum array 
+
+
 #define NPROC        64  // maximum number of processes
 #define NCPU          8  // maximum number of CPUs
 #define NOFILE       16  // open files per process
@@ -13,3 +18,5 @@
 #define MAXPATH      128   // maximum file path name
 
 enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+
+#endif //hw 3 end of guard made

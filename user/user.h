@@ -1,7 +1,27 @@
+#define NPROC 64 // for hw3, matches param.h//hw added
+
+#ifndef USER_H
+#define USER_H
+
+#include "param.h"   // for NPROC
+#include "types.h"
+#include "kernel/pstat.h"//hw 3
+
+#define NPROC 64 //hw3
+
+
 struct stat;
 struct rtcdate;
-struct pstat; //hw3 getprocs
-
+ //hw3 getprocs
+//struct pstat {
+   // int inuse[NPROC];
+   // int pid[NPROC];
+   // int ppid[NPROC];
+   // int state[NPROC];   // just use int because a;ready declared
+   // int size[NPROC];
+   // char name[NPROC][16];
+  //  int priority[NPROC];
+//};
 // system calls
 int fork(void);
 int exit(int) __attribute__((noreturn));
@@ -24,8 +44,11 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-int getprocs(struct pstat*); //hw3 getprocs
 
+
+int getprocs(struct pstat*); //hw3 getprocs
+int setPriority(int pid, int priority); //HOMEOWRK3
+int getPriority(int pid);
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);
@@ -42,3 +65,5 @@ void free(void*);
 int atoi(const char*);
 int memcmp(const void *, const void *, uint);
 void *memcpy(void *, const void *, uint);
+
+#endif
