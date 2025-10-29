@@ -13,6 +13,7 @@ struct pstat {
     uint64 size[NPROC];      // still uint64
     char name[NPROC][16];
     int priority[NPROC];
+    uint64 readytime[NPROC]; // hw3-task3
 };
 
 #endif

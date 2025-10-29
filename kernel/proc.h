@@ -6,7 +6,7 @@
 #include "param.h" // added for hw 3 to use enum
 
 //hw3-task4
-#define MAX_PRIORITY 10
+//#define MAX_PRIORITY 10
 #define AGING_INCREMENT 1
 struct context {
   uint64 ra;

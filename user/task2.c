@@ -1,4 +1,5 @@
 //used for 2nd task in hw3
+
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "user/user.h"
@@ -6,26 +7,44 @@
 int
 main(void)
 {
-    int pid = getpid();
-    printf("parent PID: %d, setting priority = 17\n", pid);
-    setPriority(pid, 17);
+  int pidA, pidB, pidC;
 
-    int pid_child = fork();
-    if (pid_child == 0) {
-        // Child
-        printf("Child process, running ps to show priorities:\n");
-        char *argv[] = { "ps", 0 };
-        exec("ps", argv);
-        printf("Exec ps failed\n");  // only prints if exec fails
-        exit(1);
-    } else if (pid_child > 0) {
-        // Parent waits for child
-        wait(0);
-    } else {
-        printf("Fork failed\n");
-        exit(1);
+  pidA = fork();
+  if (pidA == 0) {
+    setPriority(getpid(), 40);
+    for (int i = 0; i < 5; i++) {
+      printf("Child A ran ( priority = %d , CPU ticks = %d)\n", 40, uptime());
+      sleep(1);
     }
-
     exit(0);
+  }
+
+  pidB = fork();
+  if (pidB == 0) {
+    setPriority(getpid(), 39);
+    for (int i = 0; i < 5; i++) {
+      printf("Child B ran ( priority = %d , CPU ticks = %d)\n", 39, uptime());
+      sleep(1);
+    }
+    exit(0);
+  }
+
+  sleep(1); // let A and B start before creating C
+
+  pidC = fork();
+  if (pidC == 0) {
+    setPriority(getpid(), 40);
+    for (int i = 0; i < 5; i++) {
+      printf("Child C ran ( priority = %d , CPU ticks = %d)\n", 40, uptime());
+      sleep(1);
+    }
+    exit(0);
+  }
+
+  wait(0);
+  wait(0);
+  wait(0);
+
+  exit(0);
 }
 

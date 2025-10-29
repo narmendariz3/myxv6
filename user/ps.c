@@ -1,7 +1,7 @@
-#include "kernel/param.h"
-#include "kernel/types.h"
-#include "kernel/pstat.h"
-#include "user/user.h"
+#include "types.h"
+#include "user.h"
+#include "pstat.h"
+#include "procstate.h"
 
 int main(int argc, char **argv)
 {

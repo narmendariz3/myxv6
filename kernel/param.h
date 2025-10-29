@@ -22,6 +22,7 @@
 #define SCHED_RR        0   // RR
 #define SCHED_PRIORITY  1   // PRIORITY BASED
 #define DEFAULT_SCHEDULER SCHED_PRIORITY  // change to default if needed
+#define MAX_PRIORITY 40
 
 enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 

@@ -474,43 +474,59 @@ wait(uint64 addr)
 void
 scheduler(void)
 {
-    struct proc *p;
-    struct cpu *c = mycpu();
-    c->proc = 0;
+  struct proc *p;
+  struct cpu *c = mycpu();
+  c->proc = 0;
 
-    for(;;){
-        intr_on();
+  for(;;){
+    intr_on();
 
-        struct proc *highest = 0;
+    struct proc *best = 0;
+    int best_eff_prio = -1000000;
 
-        // Find highest priority RUNNABLE process
-        for(p = proc; p < &proc[NPROC]; p++){
-            acquire(&p->lock);
+    // scan all processes to find the best candidate
+    for(p = proc; p < &proc[NPROC]; p++){
+      acquire(&p->lock);
 
-            if(p->state == RUNNABLE){
-                // Aging: increase priority of long-waiting processes
-                int wait_time = ticks - p->readytime;
-                p->priority += wait_time / 100; // example: +1 per 100 ticks
-                if(p->priority > MAX_PRIORITY)
-                    p->priority = MAX_PRIORITY;
+      if(p->state == RUNNABLE){
+        // compute effective priority with aging but DON'T write back
+        // Aging policy: +1 effective priority per AGING_INTERVAL ticks waiting
+        // (choose interval to values that make sense; AGING_INCREMENT constant can be used)
+        int wait_ticks = ticks - p->readytime;
+        int aging = wait_ticks / 100; // tune 100 -> interval in ticks
+        int eff_prio = p->priority + aging;
 
-                if(highest == 0 || p->priority > highest->priority)
-                    highest = p;
-            }
+        // clamp to MAX_PRIORITY
+        if(eff_prio > MAX_PRIORITY)
+          eff_prio = MAX_PRIORITY;
 
-            release(&p->lock);
+        // choose the best: larger eff_prio wins
+        if (best == 0 || eff_prio > best_eff_prio) {
+          best = p;
+          best_eff_prio = eff_prio;
+        } else if (eff_prio == best_eff_prio) {
+          // tie-breaker: prefer earlier readytime (older) so fairness; then lower pid
+          if (p->readytime < best->readytime || (p->readytime == best->readytime && p->pid < best->pid)) {
+            best = p;
+            best_eff_prio = eff_prio;
+          }
         }
+      }
 
-        // Run the selected process
-        if(highest){
-            acquire(&highest->lock);
-            highest->state = RUNNING;
-            c->proc = highest;
-            swtch(&c->context, &highest->context);
-            c->proc = 0;
-            release(&highest->lock);
-        }
+      release(&p->lock);
     }
+
+    if(best){
+      acquire(&best->lock);
+      best->state = RUNNING;
+      c->proc = best;
+      // optional debug:
+      // cprintf("scheduler: running pid %d base=%d eff=%d\n", best->pid, best->priority, best_eff_prio);
+      swtch(&c->context, &best->context);
+      c->proc = 0;
+      release(&best->lock);
+    }
+  }
 }
 
 
@@ -720,33 +736,38 @@ procinfo(uint64 addr)
   struct proc *p;
   struct proc *thisproc = myproc();
   struct pstat kinfo;
-  int i = 0;
+  int idx = 0;                  // number of filled entries
 
-  acquire(&wait_lock);
+  // zero kinfo (optional, but safer)
+  memset(&kinfo, 0, sizeof(kinfo));
 
+  // iterate processes; lock each proc while reading it
   for (p = proc; p < &proc[NPROC]; p++) {
-    if (p->state == UNUSED) {
-      kinfo.inuse[i] = 0;
-    } else {
-      kinfo.inuse[i] = 1;
-      kinfo.pid[i] = p->pid;
-      kinfo.state[i] = p->state;
-      kinfo.size[i] = p->sz;
-      kinfo.ppid[i] = p->parent ? p->parent->pid : 0;
-      kinfo.priority[i] = p->priority;
-      kinfo.readytime[i] = p->readytime;//hw3-task3
-      safestrcpy(kinfo.name[i], p->name, sizeof(p->name));
+    acquire(&p->lock);
+
+    if (p->state != UNUSED) {
+      kinfo.inuse[idx]      = 1;
+      kinfo.pid[idx]        = p->pid;
+      kinfo.state[idx]      = p->state;
+      kinfo.size[idx]       = p->sz;
+      kinfo.ppid[idx]       = p->parent ? p->parent->pid : 0;
+      kinfo.priority[idx]   = p->priority;
+      kinfo.readytime[idx]  = p->readytime; // hw3-task3
+      safestrcpy(kinfo.name[idx], p->name, sizeof(p->name));
+      idx++;
     }
-    i++;
+
+    release(&p->lock);
   }
 
-  release(&wait_lock);
-
+  // copyout the kernel-side pstat to user space
   if (copyout(thisproc->pagetable, addr, (char *)&kinfo, sizeof(kinfo)) < 0)
     return -1;
 
-  return 0;
+  // return number of valid process entries
+  return idx;
 }
+
 
 
 ///////////////CHANGE
