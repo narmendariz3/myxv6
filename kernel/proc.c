@@ -120,7 +120,7 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
-  p->priority = 0; //USED FOR HW#
+  p->priority = 20; //USED FOR HW#3
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
     freeproc(p);
@@ -244,7 +244,7 @@ userinit(void)
   p->cwd = namei("/");
 
   p->state = RUNNABLE;
-
+  p->readytime=ticks;
   release(&p->lock);
 }
 
@@ -314,6 +314,7 @@ fork(void)
 
   acquire(&np->lock);
   np->state = RUNNABLE;
+  p->readytime = ticks; //hw3-task3
   release(&np->lock);
 
   return pid;
@@ -435,35 +436,85 @@ wait(uint64 addr)
 //  - swtch to start running that process.
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
-void
-scheduler(void)
-{
-  struct proc *p;
-  struct cpu *c = mycpu();
-  
-  c->proc = 0;
-  for(;;){
-    // Avoid deadlock by ensuring that devices can interrupt.
-    intr_on();
 
-    for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);
-      if(p->state == RUNNABLE) {
+//schedular BEFORE TASK 2
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+//void
+//scheduler(void)
+//{
+  //struct proc *p;
+  //struct cpu *c = mycpu();
+  
+  //c->proc = 0;
+  //for(;;){
+    // Avoid deadlock by ensuring that devices can interrupt.
+    //intr_on();
+
+    //for(p = proc; p < &proc[NPROC]; p++) {
+      //acquire(&p->lock);
+      //if(p->state == RUNNABLE) {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
+        //p->state = RUNNING;
+        //c->proc = p;
+        //swtch(&c->context, &p->context);
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
-        c->proc = 0;
-      }
-      release(&p->lock);
+        //c->proc = 0;
+      //}
+      //release(&p->lock);
+    //}
+  //}
+//}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//new schedular for task 2
+
+void
+scheduler(void)
+{
+    struct proc *p;
+    struct cpu *c = mycpu();
+    c->proc = 0;
+
+    for(;;){
+        intr_on();
+
+        struct proc *highest = 0;
+
+        // Find highest priority RUNNABLE process
+        for(p = proc; p < &proc[NPROC]; p++){
+            acquire(&p->lock);
+
+            if(p->state == RUNNABLE){
+                // Aging: increase priority of long-waiting processes
+                int wait_time = ticks - p->readytime;
+                p->priority += wait_time / 100; // example: +1 per 100 ticks
+                if(p->priority > MAX_PRIORITY)
+                    p->priority = MAX_PRIORITY;
+
+                if(highest == 0 || p->priority > highest->priority)
+                    highest = p;
+            }
+
+            release(&p->lock);
+        }
+
+        // Run the selected process
+        if(highest){
+            acquire(&highest->lock);
+            highest->state = RUNNING;
+            c->proc = highest;
+            swtch(&c->context, &highest->context);
+            c->proc = 0;
+            release(&highest->lock);
+        }
     }
-  }
 }
+
+
+
 
 // Switch to scheduler.  Must hold only p->lock
 // and have changed proc->state. Saves and restores
@@ -499,6 +550,7 @@ yield(void)
   struct proc *p = myproc();
   acquire(&p->lock);
   p->state = RUNNABLE;
+  p->readytime = ticks;//hw3-task3
   sched();
   release(&p->lock);
 }
@@ -567,6 +619,7 @@ wakeup(void *chan)
       acquire(&p->lock);
       if(p->state == SLEEPING && p->chan == chan) {
         p->state = RUNNABLE;
+        p->readytime = ticks;//hw3-task3
       }
       release(&p->lock);
     }
@@ -660,6 +713,7 @@ procdump(void)
 
 // Fill in user-provided array with info for current processes
 // Return the number of processes found
+
 int
 procinfo(uint64 addr)
 {
@@ -680,6 +734,7 @@ procinfo(uint64 addr)
       kinfo.size[i] = p->sz;
       kinfo.ppid[i] = p->parent ? p->parent->pid : 0;
       kinfo.priority[i] = p->priority;
+      kinfo.readytime[i] = p->readytime;//hw3-task3
       safestrcpy(kinfo.name[i], p->name, sizeof(p->name));
     }
     i++;
@@ -692,8 +747,46 @@ procinfo(uint64 addr)
 
   return 0;
 }
-//HOMEWORK 3 SET PRIORITY
 
+
+///////////////CHANGE
+//int
+//procinfo(uint64 addr)
+//{
+ // struct proc *p;
+ // struct proc *thisproc = myproc();
+ // struct pstat kinfo;
+  //int i = 0;
+
+  //acquire(&wait_lock);
+
+  //for (p = proc; p < &proc[NPROC]; p++) {
+    //if (p->state == UNUSED) {
+      //kinfo.inuse[i] = 0;
+    //} else {
+      //kinfo.inuse[i] = 1;
+      //kinfo.pid[i] = p->pid;
+      //kinfo.state[i] = p->state;
+      //kinfo.size[i] = p->sz;
+      //kinfo.ppid[i] = p->parent ? p->parent->pid : 0;
+      //kinfo.priority[i] = p->priority;
+      //safestrcpy(kinfo.name[i], p->name, sizeof(p->name));
+    //}
+    //i++;
+  //}
+
+ // release(&wait_lock);
+
+//  if (copyout(thisproc->pagetable, addr, (char *)&kinfo, sizeof(kinfo)) < 0)
+//    return -1;
+//
+//  return 0;
+//}
+
+////////end of change
+
+
+//HOMEWORK 3 SET PRIORITY
 int
 getPriority(int pid)
 {

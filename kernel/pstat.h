@@ -20,5 +20,6 @@ struct pstat {
   uint64 size[NPROC];     // memory size in bytes
   char name[NPROC][16];   // process name
   int priority[NPROC];    // process priority
+   uint64 readytime[NPROC];// hw3-task3
 };
 #endif // PSTAT_H

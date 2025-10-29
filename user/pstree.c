@@ -3,7 +3,7 @@
 #include "kernel/pstat.h"
 #include "user/user.h"
 
-struct pstat uproc[NPROC];
+struct pstat uproc;//[NPROC];
 int nprocs;
 
 void mktree(int indent, int pid)
@@ -13,7 +13,8 @@ void mktree(int indent, int pid)
 
     while (!found && i < nprocs)
     {
-        if (uproc[i].pid == pid)
+       // if (uproc[i].pid == pid)
+	if (uproc.pid[i] == pid)
             found = 1;
         else
             i++;
@@ -25,11 +26,15 @@ void mktree(int indent, int pid)
     }
     for (int j = 0; j < indent; j++)
         printf("  ");
-    printf("%s(%d)\n", uproc[i].name, uproc[i].pid);
+    printf("%s(%d)\n", uproc.name[i], uproc.pid[i]);
     for (i = 0; i < nprocs; i++)
-        if (uproc[i].ppid == pid)
+        //if (uproc[i].ppid == pid)
+	if (uproc.ppid[i] == pid)
+
         {
-            mktree(indent + 1, uproc[i].pid);
+           // mktree(indent + 1, uproc[i].pid);
+	      mktree(indent + 1, uproc.pid[i]);
+
         }
     return;
 }
@@ -40,7 +45,9 @@ int main(int argc, char **argv)
 
     if (argc == 2)
         pid = atoi(argv[1]);
-    nprocs = getprocs(uproc);
+   // nprocs = getprocs(uproc);
+    nprocs = getprocs(&uproc);  // pass pointer to struct
+
     if (nprocs < 0)
         exit(-1);
     mktree(0, pid);

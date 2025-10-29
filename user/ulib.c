@@ -2,6 +2,7 @@
 #include "kernel/stat.h"
 #include "kernel/fcntl.h"
 #include "user/user.h"
+#include "kernel/syscall.h"//hw3
 
 char*
 strcpy(char *s, const char *t)
@@ -134,3 +135,10 @@ memcpy(void *dst, const void *src, uint n)
 {
   return memmove(dst, src, n);
 }
+//int getPriority(int pid) {
+  //  return syscall(SYS_getPriority, pid);
+//}
+
+//int setPriority(int pid, int priority) {
+  //  return syscall(SYS_setPriority, pid, priority);
+//}

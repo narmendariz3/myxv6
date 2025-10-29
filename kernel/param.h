@@ -17,6 +17,12 @@
 #define FSSIZE       1000  // size of file system in blocks
 #define MAXPATH      128   // maximum file path name
 
+//SCHEDULING TASK 2
+
+#define SCHED_RR        0   // RR
+#define SCHED_PRIORITY  1   // PRIORITY BASED
+#define DEFAULT_SCHEDULER SCHED_PRIORITY  // change to default if needed
+
 enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 #endif //hw 3 end of guard made

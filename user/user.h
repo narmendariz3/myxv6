@@ -45,7 +45,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 
-
+int syscall(int num, ...);//hw 3
 int getprocs(struct pstat*); //hw3 getprocs
 int setPriority(int pid, int priority); //HOMEOWRK3
 int getPriority(int pid);
