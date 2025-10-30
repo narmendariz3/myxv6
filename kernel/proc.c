@@ -306,6 +306,9 @@ fork(void)
 
   pid = np->pid;
 
+  np->priority = p->priority;   // inherit parent's priority
+  np->readytime = ticks; 
+
   release(&np->lock);
 
   acquire(&wait_lock);
@@ -469,9 +472,9 @@ wait(uint64 addr)
   //}
 //}
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//new schedular for task 2
+//new schedular for task 2and so on
 
-void
+void                 
 scheduler(void)
 {
   struct proc *p;
@@ -484,50 +487,69 @@ scheduler(void)
     struct proc *best = 0;
     int best_eff_prio = -1000000;
 
-    // scan all processes to find the best candidate
+    //
+    // Step 1: Find the best runnable process
+    //
     for(p = proc; p < &proc[NPROC]; p++){
       acquire(&p->lock);
 
       if(p->state == RUNNABLE){
-        // compute effective priority with aging but DON'T write back
-        // Aging policy: +1 effective priority per AGING_INTERVAL ticks waiting
-        // (choose interval to values that make sense; AGING_INCREMENT constant can be used)
         int wait_ticks = ticks - p->readytime;
-        int aging = wait_ticks / 100; // tune 100 -> interval in ticks
+        int aging = wait_ticks / 100;  
         int eff_prio = p->priority + aging;
-
-        // clamp to MAX_PRIORITY
         if(eff_prio > MAX_PRIORITY)
           eff_prio = MAX_PRIORITY;
 
-        // choose the best: larger eff_prio wins
-        if (best == 0 || eff_prio > best_eff_prio) {
+        if(best == 0 || eff_prio > best_eff_prio ||
+           (eff_prio == best_eff_prio &&
+            (p->readytime < best->readytime ||
+             (p->readytime == best->readytime && p->pid < best->pid)))){
+          if(best)
+            release(&best->lock);
           best = p;
           best_eff_prio = eff_prio;
-        } else if (eff_prio == best_eff_prio) {
-          // tie-breaker: prefer earlier readytime (older) so fairness; then lower pid
-          if (p->readytime < best->readytime || (p->readytime == best->readytime && p->pid < best->pid)) {
-            best = p;
-            best_eff_prio = eff_prio;
-          }
+          continue;
         }
       }
 
       release(&p->lock);
     }
 
+    //
+    // Step 2: Apply aging to all runnable processes (not the chosen one)
+    //
+    for(p = proc; p < &proc[NPROC]; p++){
+      if(p == best)
+        continue;
+
+      acquire(&p->lock);
+      if(p->state == RUNNABLE){
+        int wait_ticks = ticks - p->readytime;
+        if(wait_ticks >= 100 && p->priority < MAX_PRIORITY){
+          p->priority++;
+          p->readytime = ticks;
+        }
+      }
+      release(&p->lock);
+    }
+
+    //
+    // Step 3: Run the selected process
+    //
     if(best){
-      acquire(&best->lock);
+      // We already hold best->lock
       best->state = RUNNING;
       c->proc = best;
-      // optional debug:
-      // cprintf("scheduler: running pid %d base=%d eff=%d\n", best->pid, best->priority, best_eff_prio);
+
       swtch(&c->context, &best->context);
+
       c->proc = 0;
       release(&best->lock);
     }
   }
 }
+
+
 
 
 
