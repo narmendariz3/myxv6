@@ -1,28 +1,13 @@
-#define NPROC 64 // for hw3, matches param.h//hw added
-
 #ifndef USER_H
 #define USER_H
 
-#include "param.h"   // for NPROC
 #include "types.h"
-#include "kernel/pstat.h"//hw 3
-
-#define NPROC 64 //hw3
-
-
-struct stat;
-struct rtcdate;
- //hw3 getprocs
-//struct pstat {
-   // int inuse[NPROC];
-   // int pid[NPROC];
-   // int ppid[NPROC];
-   // int state[NPROC];   // just use int because a;ready declared
-   // int size[NPROC];
-   // char name[NPROC][16];
-  //  int priority[NPROC];
-//};
-// system calls
+#include "kernel/stat.h"
+#include "kernel/pstat.h"
+#include "param.h"
+// ===============================
+// System calls
+// ===============================
 int fork(void);
 int exit(int) __attribute__((noreturn));
 int wait(int*);
@@ -45,11 +30,17 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 
-int syscall(int num, ...);//hw 3
-int getprocs(struct pstat*); //hw3 getprocs
-int setPriority(int pid, int priority); //HOMEOWRK3
-int getPriority(int pid);
-// ulib.c
+// ===============================
+// Homework 3 / Homework 4 system calls
+// ===============================
+int getprocs(struct pstat*);     // HW3
+int setPriority(int pid, int priority); // HW3
+int getPriority(int pid);        // HW3
+uint64 freepmem(void);           // HW4
+
+// ===============================
+// User library (ulib.c)
+// ===============================
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);
 void *memmove(void*, const void*, int);
@@ -63,7 +54,7 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
-int memcmp(const void *, const void *, uint);
-void *memcpy(void *, const void *, uint);
+int memcmp(const void*, const void*, uint);
+void* memcpy(void*, const void*, uint);
 
-#endif
+#endif // USER_H

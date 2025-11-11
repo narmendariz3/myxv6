@@ -7,6 +7,8 @@
 #include "spinlock.h"
 #include "proc.h"
 
+#include "kalloc.h"  // Homework 4: for freepmem()
+
 //hw 3
 int setPriority(int pid, int priority);
 int getPriority(int pid);
@@ -41,20 +43,22 @@ sys_wait(void)
     return -1;
   return wait(p);
 }
-
+////MODIFY FOR TASK TWOOOO HOMEWORK 4
 uint64
 sys_sbrk(void)
 {
   int addr;
   int n;
-
+  struct proc *p = myproc();
   if(argint(0, &n) < 0)
     return -1;
-  addr = myproc()->sz;
-  if(growproc(n) < 0)
-    return -1;
+  addr = p->sz;
+  // replace -> if(growproc(n) < 0) with next line 
+  p->sz += n;
   return addr;
 }
+
+//////////////////////////////////////
 
 uint64
 sys_sleep(void)
@@ -129,4 +133,11 @@ int pid;
     if(argint(0, &pid) < 0)
         return -1;
     return getPriority(pid);
+}
+
+//HOMEWORK4
+uint64
+sys_freepmem(void)
+{
+   return freepmem();
 }

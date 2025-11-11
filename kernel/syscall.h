@@ -23,3 +23,4 @@
 #define SYS_getprocs 22 //hw3 getprocs
 #define SYS_getPriority 23 //HOMEWORK3
 #define SYS_setPriority 24 //HOMEWORK3
+#define SYS_freepmem 25 //HOMEWORK4

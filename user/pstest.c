@@ -33,26 +33,32 @@ int main(int argc, char *argv[])
                 // process d
                 exit(0);
             }
+
             if (fork_or_die() == 0)
             {
                 sleep(40);
                 // process e
                 exit(0);
             }
+
             wait_or_die();
             wait_or_die();
+
             if (fork_or_die() == 0)
             {
                 sleep(60);
                 // process f
                 exit(0);
             }
+
             wait_or_die();
             exit(0);
         }
+
         wait_or_die();
         exit(0);
     }
+
     wait_or_die();
     exit(0);
 }

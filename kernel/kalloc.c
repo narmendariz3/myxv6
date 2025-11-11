@@ -1,3 +1,4 @@
+
 // Physical memory allocator, for user processes,
 // kernel stacks, page-table pages,
 // and pipe buffers. Allocates whole 4096-byte pages.
@@ -8,6 +9,7 @@
 #include "spinlock.h"
 #include "riscv.h"
 #include "defs.h"
+#include "kalloc.h" //HOMEWORK4
 
 void freerange(void *pa_start, void *pa_end);
 
@@ -80,3 +82,23 @@ kalloc(void)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
 }
+
+
+// Homework 4: return amount of free physical memory (bytes)
+uint64
+freepmem(void)
+{
+  struct run *r;
+  uint64 free_bytes = 0;
+
+  acquire(&kmem.lock);
+  r = kmem.freelist;
+  while(r){
+    free_bytes += PGSIZE;
+    r = r->next;
+  }
+  release(&kmem.lock);
+
+  return free_bytes;
+}
+

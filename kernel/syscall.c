@@ -111,6 +111,9 @@ extern uint64 sys_setPriority(void);
 extern uint64 sys_getPriority(void);
 
 
+//HOMEWORK4
+extern uint64 sys_freepmem(void);
+
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -136,7 +139,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_getprocs]   sys_getprocs, //hw3 getprocs
 [SYS_setPriority] sys_setPriority, //HOMEWORK3
 [SYS_getPriority] sys_getPriority,//HOMEWORK3
-
+[SYS_freepmem] sys_freepmem,
 };
 
 void
