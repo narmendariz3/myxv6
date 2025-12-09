@@ -108,6 +108,14 @@ extern uint64 sys_freepmem(void);
 extern uint64 sys_mmap(void);
 extern uint64 sys_munmap(void);
 
+
+//added externs for homework 5
+extern uint64 sys_sem_init(void);
+extern uint64 sys_sem_destroy(void);
+extern uint64 sys_sem_wait(void);
+extern uint64 sys_sem_post(void);
+
+
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -133,6 +141,12 @@ static uint64 (*syscalls[])(void) = {
 [SYS_freepmem]  sys_freepmem,
 [SYS_mmap]   sys_mmap,
 [SYS_munmap] sys_munmap,
+
+//homework 5 additions 
+[SYS_sem_init] = sys_sem_init,
+[SYS_sem_destroy] = sys_sem_destroy,
+[SYS_sem_wait] = sys_sem_wait,
+[SYS_sem_post] = sys_sem_post,
 };
 
 void

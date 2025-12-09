@@ -1,7 +1,34 @@
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "kernel/fcntl.h"
-#include "user/user.h"
+#include "user.h"
+#include "kernel/syscall.h"
+#include <stdarg.h>
+
+int syscall(int num, ...)
+{
+    int ret;
+    va_list ap;
+    va_start(ap, num);
+
+    register uint64 a0 asm("a0");
+    register uint64 a1 asm("a1");
+    register uint64 a2 asm("a2");
+    register uint64 a7 asm("a7") = num;
+
+    a0 = va_arg(ap, uint64);
+    a1 = va_arg(ap, uint64);
+    a2 = va_arg(ap, uint64);
+
+    asm volatile("ecall"
+                 : "+r"(a0)
+                 : "r"(a0), "r"(a1), "r"(a2), "r"(a7)
+                 : "memory");
+
+    ret = a0;
+    va_end(ap);
+    return ret;
+}
 
 char*
 strcpy(char *s, const char *t)
@@ -134,3 +161,25 @@ memcpy(void *dst, const void *src, uint n)
 {
   return memmove(dst, src, n);
 }
+
+
+
+////homework 5
+// Semaphore user-space wrappers
+int sem_init_user(struct sem_t *s, int value) {
+    return syscall(SYS_sem_init, value, (uint64)s);
+}
+
+int sem_destroy_user(struct sem_t *s) {
+    return syscall(SYS_sem_destroy, (uint64)s);
+}
+
+int sem_wait_user(struct sem_t *s) {
+    return syscall(SYS_sem_wait, (uint64)s);
+}
+
+int sem_post_user(struct sem_t *s) {
+    return syscall(SYS_sem_post, (uint64)s);
+}
+
+

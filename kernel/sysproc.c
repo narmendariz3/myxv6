@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "semaphore.h"
 
 uint64
 sys_exit(void)
@@ -112,4 +113,112 @@ sys_freepmem(void)
 {
   uint64 pages = kfreepages_count();
   return pages * PGSIZE;
+}
+
+
+
+// homework 5 semaphore adds for task 1 to run
+// sys_sem_init(&sem_id, initial_count)
+uint64
+sys_sem_init(void) {
+    int count;
+    uint64 uaddr;
+
+    if (argint(0, &count) < 0 || argaddr(1, &uaddr) < 0)
+        return -1;
+
+    int idx = semalloc();
+    if (idx < 0)
+        return -1;
+
+    // Initialize safely
+    acquire(&semtable.sem[idx].lock);
+    semtable.sem[idx].count = count; // initial count
+    semtable.sem[idx].valid = 1;     // mark allocated
+    release(&semtable.sem[idx].lock);
+
+    // Copy index back to user space
+    if (copyout(myproc()->pagetable, uaddr, (char *)&idx, sizeof(int)) < 0)
+        return -1;
+
+    printf("[DEBUG] sys_sem_init: returned idx=%d, count=%d\n", idx, count);
+    return 0;
+}
+
+// sys_sem_destroy(&sem_id)
+uint64
+sys_sem_destroy(void) {
+    uint64 uaddr;
+    int idx;
+
+    if (argaddr(0, &uaddr) < 0)
+        return -1;
+
+    if (copyin(myproc()->pagetable, (char *)&idx, uaddr, sizeof(int)) < 0)
+        return -1;
+
+    if (idx < 0 || idx >= NSEM)
+        return -1;
+
+    semdealloc(idx);
+    return 0;
+}
+
+// sys_sem_wait(&sem_id)
+uint64
+sys_sem_wait(void) {
+    uint64 uaddr;
+    int idx;
+
+    if (argaddr(0, &uaddr) < 0)
+        return -1;
+    if (copyin(myproc()->pagetable, (char *)&idx, uaddr, sizeof(int)) < 0)
+        return -1;
+    if (idx < 0 || idx >= NSEM)
+        return -1;
+
+    struct semaphore *s = &semtable.sem[idx];
+    acquire(&s->lock);
+    if (!s->valid) {
+        release(&s->lock);
+        return -1;
+    }
+
+    while (s->count <= 0) {
+        sleep(s, &s->lock);
+        if (!s->valid) {
+            release(&s->lock);
+            return -1;
+        }
+    }
+
+    s->count--;
+    release(&s->lock);
+    return 0;
+}
+
+// sys_sem_post(&sem_id)
+uint64
+sys_sem_post(void) {
+    uint64 uaddr;
+    int idx;
+
+    if (argaddr(0, &uaddr) < 0)
+        return -1;
+    if (copyin(myproc()->pagetable, (char *)&idx, uaddr, sizeof(int)) < 0)
+        return -1;
+    if (idx < 0 || idx >= NSEM)
+        return -1;
+
+    struct semaphore *s = &semtable.sem[idx];
+    acquire(&s->lock);
+    if (!s->valid) {
+        release(&s->lock);
+        return -1;
+    }
+
+    s->count++;
+    wakeup(s);
+    release(&s->lock);
+    return 0;
 }

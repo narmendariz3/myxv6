@@ -39,3 +39,10 @@ entry("uptime");
 entry("freepmem");
 entry("mmap");
 entry("munmap");
+
+
+#hw 5 - add syscall for assignment 
+entry("sem_init");
+entry("sem_destroy");
+entry("sem_wait");
+entry("sem_post");
